@@ -106,18 +106,27 @@ class Database:
         self.con: duckdb.DuckDBPyConnection | None = None
         self.coverage: dict = {}
 
+    
     def connect(self) -> None:
-        if not os.path.isfile(self.path):
-            download_database_if_needed(db_path)
-            raise FileNotFoundError("DuckDB file not found. Set DUCKDB_PATH (see .env.example).")
+        download_database_if_needed(self.path)
+
+        if not os.path.isfile(self.path) or os.path.getsize(self.path) == 0:
+            raise FileNotFoundError(
+                f"DuckDB file not found or empty: {self.path}. "
+                "Check DUCKDB_PATH and DUCKDB_URL."
+            )
+
         con = duckdb.connect(":memory:")
-        safe = self.path.replace("'", "''")  # server-side config value, not user input
+        safe = self.path.replace("'", "''")
         con.execute(f"ATTACH '{safe}' AS src (READ_ONLY)")
+
         for stmt in BUILD_SQL:
             con.execute(stmt)
+
         self.con = con
         self.coverage = self._coverage()
         log.info("Database ready: %s", self.coverage)
+
 
     def _coverage(self) -> dict:
         assert self.con
