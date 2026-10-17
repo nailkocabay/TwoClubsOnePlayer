@@ -108,6 +108,7 @@ class Database:
 
     def connect(self) -> None:
         if not os.path.isfile(self.path):
+            download_database_if_needed(db_path)
             raise FileNotFoundError("DuckDB file not found. Set DUCKDB_PATH (see .env.example).")
         con = duckdb.connect(":memory:")
         safe = self.path.replace("'", "''")  # server-side config value, not user input
