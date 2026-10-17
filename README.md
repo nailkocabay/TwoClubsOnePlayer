@@ -1,5 +1,7 @@
 # TwoClubsOnePlayer
 
+🚀 **Live Demo:** [https://2c1p.nailkocabay.com/](https://2c1p.nailkocabay.com/)
+
 Pick two football clubs and see every player with a **recorded match appearance for both**. It looks at careers, not current squads.
 
 - **Backend:** Python, FastAPI, Pydantic, DuckDB (source file opened read-only)
