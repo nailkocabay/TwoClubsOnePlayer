@@ -1,125 +1,275 @@
-# TwoClubsOnePlayer
+⚽ TwoClubsOnePlayer
 
-🚀 **Live Demo:** [https://2c1p.nailkocabay.com/](https://2c1p.nailkocabay.com/)
+Two Clubs. One Player. Shared Football History.
 
-Pick two football clubs and see every player with a **recorded match appearance for both**. It looks at careers, not current squads.
+TwoClubsOnePlayer is a web application that helps football fans discover players who have made recorded match appearances for two different football clubs throughout their careers.
 
-- **Backend:** Python, FastAPI, Pydantic, DuckDB (source file opened read-only)
-- **Frontend:** Next.js 15 (App Router), TypeScript, Tailwind CSS, Lucide icons
-- **Tests:** pytest (synthetic fixture + optional real-database cross-check)
+Choose two clubs, compare their histories, and discover the players who have played for both.
 
-## Features
+🌐 Live Demo: "2c1p.nailkocabay.com" (https://2c1p.nailkocabay.com)
+💻 GitHub Repository: "nailkocabay/TwoClubsOnePlayer" (https://github.com/nailkocabay/TwoClubsOnePlayer)
 
-Searchable club pickers (accent/case-insensitive, keyboard accessible) · same-club prevention · shared players with independent per-club appearance counts, goals, assists and first/last dates · sort by combined appearances or name · "Show more" pagination · swap / change teams · shareable URLs (`/?a=418&b=506`) · player drawer with a **recorded-appearance timeline** and a **separate transfer history** · visible data-coverage notice · loading, empty and error states · responsive layout.
+«Data coverage notice: Results are based on recorded appearances in the available dataset, covering 3 July 2012 to 28 June 2026. The dataset does not represent the complete history of world football.»
 
-## Architecture
+---
 
-```
-backend/app/
-  main.py            app factory, CORS, safe error handlers
-  database.py        read-only ATTACH + two in-memory derived tables; cursor-per-request
-  api/routes.py      endpoints
-  services/          validation (same club, 404s), age, image policy
-  repositories/      all SQL (parameterised; ORDER BY comes from a whitelist)
-  schemas/           Pydantic response models
-backend/tests/       pytest suite with a synthetic DuckDB fixture
-frontend/            app/, components/, lib/ (API client), types/
-scripts/             verify_real_pair.py (independent SQL check + latency)
-```
+✨ Features
 
-DuckDB connections are not thread-safe, so the app keeps one root in-memory connection and gives every request its own `cursor()`. The supplied file is `ATTACH ... (READ_ONLY)`; nothing is ever written to it. Derived tables live only in memory and are rebuilt at startup (about 0.5 s).
+- Club Search: Search for football clubs and select two teams.
+- Shared Player Discovery: Find players with at least one recorded match appearance for both selected clubs.
+- Career Statistics: View separate appearance counts, goals, assists, and first/last recorded appearance dates for each club.
+- Player Career Timeline: Explore recorded club appearances and transfer history separately.
+- Sorting & Pagination: Sort results by player name or combined appearances and load additional results.
+- Club Switching: Swap or change the selected teams.
+- Shareable Comparisons: Share club comparisons through URLs containing the selected club IDs.
+- Responsive Design: Access the application on desktop and mobile devices.
+- Data Coverage Information: Understand the limitations of the available football data.
+- Interactive API Documentation: Explore backend endpoints through Swagger UI.
 
-## Database schema discovered
+🛠️ Tech Stack
 
-The file (`transfermarkt-datasets.duckdb`, ~210 MB) has 13 tables and no views. The ones used:
+Frontend
 
-| Table | Rows | Used for |
-|---|---|---|
-| `appearances` | 1,894,350 | **Source of truth for "played for"**: one row per player per match, `player_club_id` (INTEGER), `date` |
-| `players` | 50,149 | Name, nationality, position, date of birth, etc. |
-| `clubs` | 796 | Club names. `club_id` is **VARCHAR** (cast to integer) |
-| `games` | 88,958 | Club names for club ids missing from `clubs` |
-| `transfers` | 175,165 | Transfer history, shown separately, never used to qualify a player |
-| `national_teams`, `competitions` | 124 / 65 | Exclude national teams from clubs; country labels |
+- Next.js 15 (App Router)
+- TypeScript
+- Tailwind CSS
+- Lucide Icons
 
-Data-quality findings that shaped the design:
+Backend
 
-- `appearances` has **no duplicates** (checked `appearance_id` and `(game_id, player_id)`), and no nulls in `player_id`, `player_club_id`, `date`.
-- **686 club ids** in `appearances` are not in `clubs` (cup/European opponents). 685 have names in `games`, so the club directory merges both. One has no name anywhere and is omitted from search.
-- **46 national-team ids** appear (World Cup 2026, Africa Cup of Nations). They are excluded from clubs and from club career history.
-- `appearances` contains one `player_id` (380365) with no row in `players`; it is shown as "Unknown player #380365".
-- 251 clubs in `clubs` have no appearance rows. They are hidden from search by default (`only_with_data=false` shows them).
-- No club-logo column exists. `players.image_url` exists (see licensing).
+- Python
+- FastAPI
+- Pydantic
+- DuckDB
 
-## How the shared-player algorithm works
+Testing
 
-1. At startup, `club_player_stats` is built with one pass: `GROUP BY player_id, player_club_id` over `appearances` (count, first/last date, goals, assists).
-2. A request self-joins that table: rows for club A joined to rows for club B on `player_id`. Because there is exactly one row per player and club, the join cannot multiply rows, and each club's count is independent.
-3. A player qualifies only if both rows exist, so at least one real appearance at each club. Transfers play no part.
-4. Players are left-joined to `players` for display; sorting and paging happen in SQL (`LIMIT/OFFSET`, total via a window count).
+- pytest
+- Synthetic database fixtures
+- Optional real-database cross-checks
 
-## Prerequisites
+🏗️ Architecture
 
-Python 3.11+, Node 20+, the DuckDB file (DuckDB >= 1.5 is required to open it).
+TwoClubsOnePlayer uses a frontend-backend architecture.
 
-## Setup and run
+User
+ │
+ ▼
+Next.js Frontend
+ │
+ │ HTTP Requests
+ ▼
+FastAPI Backend
+ │
+ ├── API Routes
+ ├── Validation & Services
+ ├── Repository Layer (SQL)
+ └── DuckDB
+      ├── Appearances
+      ├── Players
+      ├── Clubs
+      ├── Games
+      └── Transfers
 
-```bash
-# Backend
+The backend opens the supplied DuckDB database in read-only mode. At startup, it builds in-memory aggregated statistics to support efficient shared-player queries.
+
+🔍 How It Works
+
+1. Select two football clubs.
+2. The backend retrieves recorded appearance statistics for both clubs.
+3. Players are matched using their player IDs.
+4. Only players with at least one recorded match appearance for each selected club qualify.
+5. Results are sorted and paginated before being returned to the frontend.
+
+Transfer records are displayed separately and are not used to determine whether a player qualifies as a shared player.
+
+For each matching player, the application displays the available statistics independently for both clubs.
+
+🗄️ Dataset
+
+The project uses data from the "Transfermarkt datasets project" (https://github.com/dcaribou/transfermarkt-datasets).
+
+Table| Purpose
+"appearances"| Recorded player appearances and match dates
+"players"| Player names, nationality, position, and other available details
+"clubs"| Club information
+"games"| Additional club names for appearance records
+"transfers"| Separate player transfer history
+"competitions"| Competition information
+
+Data Limitations
+
+- Recorded appearances cover 3 July 2012 – 28 June 2026.
+- The dataset includes selected domestic top-flight leagues, domestic cups, and UEFA club competitions.
+- Historical appearances before the coverage period are unavailable.
+- Some leagues and clubs are missing from the dataset.
+- Recorded appearance totals may be lower than a player's actual career totals.
+- Player photos are disabled by default because permission to reuse the image URLs has not been established.
+
+Results should therefore be interpreted as shared players within the available dataset, not as a complete historical record of all football clubs.
+
+🚀 Getting Started
+
+Prerequisites
+
+- Python 3.11+
+- Node.js 20+
+- npm
+- The project's DuckDB database file
+
+1. Clone the Repository
+
+git clone https://github.com/nailkocabay/TwoClubsOnePlayer.git
+cd TwoClubsOnePlayer
+
+2. Configure the Database
+
+Place your DuckDB file in the project's "data/" directory:
+
+TwoClubsOnePlayer/
+├── backend/
+├── frontend/
+├── scripts/
+├── data/
+│   └── transfermarkt-datasets.duckdb
+└── README.md
+
+Create the backend environment file:
+
 cd backend
-python -m venv .venv && source .venv/bin/activate
+cp .env.example .env
+
+Set "DUCKDB_PATH" in "backend/.env" to the location of your database file.
+
+Example:
+
+DUCKDB_PATH=../data/transfermarkt-datasets.duckdb
+
+Make sure the path resolves correctly in your local environment.
+
+3. Install and Run the Backend
+
+Create a virtual environment:
+
+python -m venv .venv
+
+On Windows PowerShell:
+
+.venv\Scripts\Activate.ps1
+
+On Linux or macOS:
+
+source .venv/bin/activate
+
+Install dependencies and start the API:
+
 pip install -r requirements.txt
-cp .env.example .env            # then set DUCKDB_PATH to your file
 uvicorn app.main:app --reload --port 8000
 
-# Frontend (second terminal)
+The backend should be available at:
+
+- API: "http://localhost:8000"
+- Swagger documentation: "http://localhost:8000/docs"
+- Health check: "http://localhost:8000/api/health"
+
+4. Install and Run the Frontend
+
+Open a second terminal:
+
 cd frontend
-cp .env.example .env.local      # NEXT_PUBLIC_API_URL=http://localhost:8000
+
+Create the frontend environment file:
+
+cp .env.example .env.local
+
+Configure the API URL in "frontend/.env.local":
+
+NEXT_PUBLIC_API_URL=http://localhost:8000
+
+Install dependencies and start the development server:
+
 npm install
-npm run dev                     # http://localhost:3000
-```
+npm run dev
 
-`DUCKDB_PATH` is read from the environment or `backend/.env`; nothing is hardcoded. Docker: put the file in `./data/` and run `docker compose up --build`. (The Docker files were written but **not executed** in the environment where this was built.)
+Open "http://localhost:3000" (http://localhost:3000) in your browser.
 
-## Tests
+«On Windows, use PowerShell's "Copy-Item" command instead of "cp" if needed.»
 
-```bash
+🔌 API Endpoints
+
+Method| Endpoint| Description
+"GET"| "/api/health"| Check API health and coverage dates
+"GET"| "/api/coverage"| Retrieve dataset coverage information
+"GET"| "/api/teams"| Search and paginate clubs
+"GET"| "/api/teams/{team_id}"| Retrieve club details
+"GET"| "/api/shared-players"| Find players shared by two clubs
+"GET"| "/api/players/{player_id}/career"| Retrieve recorded appearance and transfer histories
+
+Example: Find Shared Players
+
+GET /api/shared-players?team_a=418&team_b=506&sort=appearances&order=desc
+
+The IDs above illustrate the request format. Use valid club IDs returned by the API.
+
+Interactive API documentation is available at "/docs" while the backend is running.
+
+🧪 Testing
+
+Run the backend test suite:
+
 cd backend
-pytest -q                                    # synthetic fixture only; real-DB test is skipped
-DUCKDB_PATH=/path/to/file.duckdb pytest -q   # also cross-checks Real Madrid x Juventus against raw SQL
-DUCKDB_PATH=/path/to/file.duckdb python ../scripts/verify_real_pair.py
-```
+pytest -q
 
-The suite covers: health; club search (partial, accents, wildcards, pagination, empty); valid shared query; player at both clubs; player at only one; duplicate-looking appearances (5 and 3 apps must not become 15); same club twice (400); unknown/national-team ids (404); invalid params (422); injection attempts; career ordering with national-team and transfer separation; orphan player.
+To enable the optional real-database cross-check, configure "DUCKDB_PATH" and run the tests again.
 
-## API
+You can also run the independent verification script:
 
-Interactive docs at `http://localhost:8000/docs`.
+python ../scripts/verify_real_pair.py
 
-| Endpoint | Notes |
-|---|---|
-| `GET /api/health` | Status and coverage dates |
-| `GET /api/coverage` | Dataset coverage and caveat text |
-| `GET /api/teams?search=&limit=&offset=&only_with_data=` | Stable ranking: prefix, word-start, anywhere, then size, name, id |
-| `GET /api/teams/{team_id}` | 404 if unknown |
-| `GET /api/shared-players?team_a=&team_b=&sort=name\|appearances&order=&limit=&offset=` | 400 same club, 404 unknown, 422 invalid |
-| `GET /api/players/{player_id}/career` | `appearance_history` and `transfer_history` as separate lists |
+The test suite covers club search, shared-player matching, invalid inputs, duplicate prevention, career history ordering, and other important API behaviours.
 
-## Data coverage and limitations
+🔒 Data & Security
 
-- Appearances run **3 Jul 2012 to 28 Jun 2026**. Anything earlier is absent, so e.g. a Maradona or Zidane overlap cannot appear.
-- Coverage is limited to the competitions in the dataset: 14 domestic top flights, domestic cups and UEFA club competitions. Clubs in other leagues (MLS, Saudi Pro League, Brazil, etc.) mostly have no appearance rows, so for example **Cristiano Ronaldo's Al-Nassr years are missing** from his appearance timeline, although his transfer history lists the move.
-- A club's appearance count therefore reflects only matches in covered competitions, which can understate real totals. The UI states this on every result.
-- Appearance bars in the timeline span first to last recorded match per club; a player who left and returned appears as one span.
-- Verified examples: Real Madrid x Juventus returns 7 players including Cristiano Ronaldo (294 and 134 apps) and Álvaro Morata. Results for any pair match an independent SQL query (`verify_real_pair.py`).
+- The original DuckDB database is opened read-only.
+- SQL queries use parameterized inputs.
+- Sorting fields are restricted to an allowlist.
+- The database file should not be committed unless redistribution is permitted.
+- Environment files containing local configuration should not be committed.
+- Review the dataset's licence and attribution requirements before public deployment.
 
-## Licensing and attribution
+🌐 Deployment
 
-Data originates from Transfermarkt, as packaged by the open Transfermarkt datasets project. Check the dataset's licence before public deployment, keep attribution, and do not imply affiliation. **Club logos are not used** (no licensed source in the data; monogram badges are shown). **Player photos are disabled by default**: `image_url` points to Transfermarkt's CDN and reuse rights are not granted by the dataset. Set `ENABLE_PLAYER_IMAGES=true` only if you have permission.
+The live application is available at:
 
-## Production deployment recommendations
+"https://2c1p.nailkocabay.com" (https://2c1p.nailkocabay.com)
 
-- Host the backend (Docker) and frontend (Vercel or Docker) behind HTTPS; set `CORS_ORIGINS` to the real frontend origin and `NEXT_PUBLIC_API_URL` at frontend build time.
-- Mount the DuckDB file read-only; run a single uvicorn process (or several, each holds its own ~in-memory derived tables).
-- Add rate limiting at the proxy (e.g. nginx or Cloudflare) and a response cache for `/api/shared-players`, which is deterministic for a fixed dataset.
-- Refresh the dataset on a schedule and redeploy; startup rebuilds the aggregates automatically.
+For production deployments:
+
+1. Host the FastAPI backend using a suitable hosting provider or Docker.
+2. Deploy the Next.js frontend to a platform such as Vercel or use Docker.
+3. Configure "NEXT_PUBLIC_API_URL" with the deployed backend URL.
+4. Set "CORS_ORIGINS" to the permitted frontend origin.
+5. Enable HTTPS and configure appropriate request limits and caching.
+6. Mount the database read-only and ensure the hosting environment has sufficient memory for startup aggregation.
+
+📌 Future Improvements
+
+Potential improvements include:
+
+- Expanding historical and international league coverage.
+- Adding filters by nationality, position, and active years.
+- Improving player career visualizations.
+- Adding more club comparison and player discovery options.
+- Optimizing caching and production performance.
+
+📄 Attribution
+
+Football data originates from Transfermarkt, as packaged by the "Transfermarkt datasets project" (https://github.com/dcaribou/transfermarkt-datasets).
+
+TwoClubsOnePlayer is an independent project and is not affiliated with or endorsed by Transfermarkt. Review the applicable dataset licence before redistributing data or deploying the application publicly.
+
+---
+
+Two Clubs. One Player. Countless Connections. ⚽
+
+Developed by "Nail Kocabay" (https://github.com/nailkocabay).
