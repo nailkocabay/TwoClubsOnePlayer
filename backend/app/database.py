@@ -13,9 +13,38 @@ import logging
 import os
 from collections.abc import Iterator
 
+import shutil
+import urllib.request
 import duckdb
 from fastapi import Request
 
+def download_database_if_needed(db_path: str) -> None:
+    """Download the DuckDB release asset if the file is missing."""
+    if os.path.isfile(db_path) and os.path.getsize(db_path) > 0:
+        return
+
+    url = os.getenv("DUCKDB_URL")
+    if not url:
+        raise FileNotFoundError(
+            "DuckDB file not found. Set DUCKDB_PATH and DUCKDB_URL."
+        )
+
+    os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
+    temp_path = db_path + ".part"
+
+    try:
+        with urllib.request.urlopen(url, timeout=120) as response:
+            with open(temp_path, "wb") as output:
+                shutil.copyfileobj(response, output)
+
+        if os.path.getsize(temp_path) == 0:
+            raise RuntimeError("Downloaded DuckDB file is empty.")
+
+        os.replace(temp_path, db_path)
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+            
 log = logging.getLogger("shared_footballers")
 
 BUILD_SQL = [
