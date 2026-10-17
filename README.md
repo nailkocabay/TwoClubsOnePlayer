@@ -1,4 +1,4 @@
-# Shared Footballers
+# TwoClubsOnePlayer
 
 Pick two football clubs and see every player with a **recorded match appearance for both**. It looks at careers, not current squads.
 
