@@ -27,8 +27,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="Shared Footballers API", version="1.0.0", lifespan=lifespan,
                   description="Find players with recorded appearances for two football clubs.")
     app.state.settings = settings
-    app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins,
-                       allow_methods=["GET"], allow_headers=["*"])
+    app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://2c1p.nailkocabay.com",
+    ],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
     @app.exception_handler(duckdb.Error)
     async def db_error(request: Request, exc: duckdb.Error):
