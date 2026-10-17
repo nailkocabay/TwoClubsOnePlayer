@@ -1,0 +1,17 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      DUCKDB_PATH: /data/transfermarkt-datasets.duckdb
+      CORS_ORIGINS: http://localhost:3000
+      ENABLE_PLAYER_IMAGES: "false"
+    volumes:
+      - ./data:/data:ro        # place transfermarkt-datasets.duckdb in ./data (mounted read-only)
+    ports: ["8000:8000"]
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on: [backend]
+    ports: ["3000:3000"]

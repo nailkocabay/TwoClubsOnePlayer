@@ -1,0 +1,17 @@
+# data and secrets
+data/
+*.duckdb
+*.duckdb.wal
+.env
+.env.*
+!.env.example
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# node
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo

@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+html { background: #0A1322; }
+body { @apply bg-ink font-sans text-chalk antialiased; }
+h1, h2, h3, .font-display { font-family: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif; letter-spacing: -0.01em; }
+:focus-visible { outline: 2px solid #35B57A; outline-offset: 2px; border-radius: 6px; }
+.tabular { font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
